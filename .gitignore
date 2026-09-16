@@ -1,0 +1,13 @@
+/data/
+*.pdf
+*.doc
+*.docx
+*.odt
+*.rtf
+.venv/
+venv/
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+.DS_Store

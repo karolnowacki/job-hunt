@@ -1,0 +1,46 @@
+cv: ~/Documents/cv.html
+
+role:
+  title_keywords: [java, kotlin, jvm, spring]
+  main_keyword: java
+  generic_titles: [backend, back-end, software, engineer, developer]
+  seniority_titles: [senior, lead, staff, principal, expert, architect]
+  excluded_titles: [junior, intern, internship, graduate, trainee, mid, regular]
+
+location:
+  city_prefixes: [krak]
+  country: Poland
+  remote_timezones: [0, 3]
+  remote_friendly: [europe, european, eea, eu, emea, worldwide, anywhere, global, poland, cet, uk, united kingdom]
+  remote_excluded: [us, usa, united states, canada, latam, latin america, brazil, mexico, argentina, india, apac, asia, australia, americas]
+
+languages:
+  accepted: [en, pl]
+  excluded_word_stems: [german, deutsch, niemieck, french, francusk, dutch, holendersk, italian, włosk, spanish, hiszpańsk, swedish, szwedzk, danish, duńsk, norwegian, norwesk, finnish, fińsk, czech, czesk]
+
+scoring:
+  shortlist_score: 7
+  strong_fit: [java, spring, kafka, activemq, flink, microservices, event-driven, fintech, trading, payments, banking, aws, azure, kubernetes, docker, on-call, observability, opentelemetry, mcp, llm]
+
+sources:
+  justjoin:
+    enabled: true
+    category: java
+    experience_level: senior
+  nofluffjobs:
+    enabled: true
+    raw_search: category=backend requirement=java seniority=senior city=krakow,remote
+    salary_currency: PLN
+    salary_period: month
+    region: pl
+    language: en-GB
+  himalayas:
+    enabled: true
+    query: java
+    seniority: Senior
+  arbeitnow:
+    enabled: true
+    max_pages: 8
+  remoteok:
+    enabled: true
+    tag: java
