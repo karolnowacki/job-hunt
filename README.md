@@ -151,14 +151,14 @@ python3 ui.py --port 9000             # UI on another port
 ## How a run works
 
 1. `python3 fetch.py` calls each enabled board and drops:
-   - offers already in `data/jobs.yaml` (by id, or same company and title)
+   - offers already in `data/jobs.yaml` (by id or the same non-empty URL). Separate openings with the same company and title are kept when their IDs and URLs differ.
    - offers older than `--days` (30 by default)
    - offers outside your city or remote region from `data/config.yaml`
    - offers below your level (`too-junior` in the output)
    - offers whose title names a language you did not list (`other-language`)
-   What is left goes to `data/inbox.jsonl`, best keyword match first.
+   What is left goes to `data/inbox.jsonl`, best keyword match first. Unscored offers from the previous inbox are kept until recorded, even when refreshing only one board, a board fails, or an offer disappears from the latest feed. Newly fetched details replace the previous inbox entry for the same ID or URL.
 2. Claude reads `data/inbox.jsonl` in batches of 100, scores every offer against your CV and `data/profile.md` and writes `data/scores.jsonl`.
-3. `python3 record.py data/scores.jsonl` merges the batch into `data/jobs.yaml`. Repeat until it reports 0 unscored.
+3. `python3 record.py data/scores.jsonl` merges the batch into `data/jobs.yaml`. Scores must be JSON integers from 1 to 10; an invalid score rejects the batch without changing `data/jobs.yaml`. Repeat until it reports 0 unscored.
 4. `python3 record.py --shortlist` prints everything worth a look.
 
 Scoring rubric:
@@ -182,7 +182,7 @@ Everything personal lives in `data/`, which is gitignored, and `.gitignore` also
 | `data/profile.md` | Your criteria in prose |
 | `data/jobs.yaml` | Every offer ever seen: score, why, gaps, decision |
 | `data/applications.md` | One row per application: status, dates, next step, notes |
-| `data/inbox.jsonl` | New offers from the last fetch (regenerated each run) |
+| `data/inbox.jsonl` | New and previously unscored offers (merged each fetch) |
 | `data/scores.jsonl` | Scores for the current batch (scratch) |
 | `data/cv-notes.md` | CV review history: score per round, what was fixed, open questions |
 
@@ -266,6 +266,14 @@ justjoin/acme-senior-backend-engineer-krakow-java-82f1acfa:
 - Be polite to the boards: the scripts pause between pages, and `/job-search` opens at most 15 individual offer pages per run.
 - Run one `/job-search` at a time. Two sessions scoring at once share `data/scores.jsonl` and overwrite each other, and a fetch started mid-scoring replaces the inbox under the batch being scored.
 - `record.py` and the UI take a lock on `data/` before writing, but a skill editing `data/applications.md` by hand does not. Either let the UI do status changes while it is running, or stop it first.
+
+## Tests
+
+Run the regression checks without contacting job boards or using personal data:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
 
 ## License
 
