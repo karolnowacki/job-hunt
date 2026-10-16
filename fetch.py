@@ -311,10 +311,6 @@ SOURCES = {
 }
 
 
-def dedupe_key(company, title):
-    return re.sub(r"[^a-z0-9+#]", "", company.lower()) + "|" + re.sub(r"[^a-z0-9+#]", "", title.lower())
-
-
 def load_jobs():
     if not JOBS_FILE.exists():
         return {}
@@ -338,7 +334,8 @@ def main():
     configured = config.get("sources") or {}
     oldest = (datetime.now(timezone.utc) - timedelta(days=args.days)).date().isoformat()
     jobs = load_jobs()
-    seen_keys = {dedupe_key(job.get("company", ""), job.get("title", "")) for job in jobs.values()}
+    seen_ids = set(jobs)
+    seen_urls = {job["url"] for job in jobs.values() if job.get("url")}
 
     selected = args.only or [name for name, settings in configured.items() if (settings or {}).get("enabled", True)]
     if not selected:
@@ -362,8 +359,9 @@ def main():
         junior_filtered = 0
         language_filtered = 0
         for record in fetched:
-            key = dedupe_key(record["company"], record["title"])
-            if record["id"] in jobs or key in seen_keys or (record["posted"] and record["posted"] < oldest):
+            if (record["id"] in seen_ids
+                    or (record["url"] and record["url"] in seen_urls)
+                    or (record["posted"] and record["posted"] < oldest)):
                 continue
             if criteria.too_junior(record["title"]):
                 junior_filtered += 1
@@ -371,7 +369,9 @@ def main():
             if criteria.wrong_language(record):
                 language_filtered += 1
                 continue
-            seen_keys.add(key)
+            seen_ids.add(record["id"])
+            if record["url"]:
+                seen_urls.add(record["url"])
             record["kw"] = criteria.keyword_hits(record)
             inbox.append(record)
             fresh += 1
@@ -379,11 +379,17 @@ def main():
 
     if not succeeded:
         sys.exit(f"every source failed, {INBOX_FILE.name} left untouched")
-    if failed:
-        fetched_ids = {record["id"] for record in inbox}
-        kept = [record for record in load_inbox() if record["id"] not in fetched_ids and record["id"] not in jobs]
-        inbox += kept
-        print(f"{'kept':12} {len(kept)} unscored from the previous inbox ({', '.join(failed)} failed)")
+    kept = []
+    for record in load_inbox():
+        if record["id"] in seen_ids or (record.get("url") and record["url"] in seen_urls):
+            continue
+        seen_ids.add(record["id"])
+        if record.get("url"):
+            seen_urls.add(record["url"])
+        kept.append(record)
+    inbox += kept
+    if kept or failed:
+        print(f"{'kept':12} {len(kept)} unscored from the previous inbox")
     inbox.sort(key=lambda record: (record["kw"], record["posted"]), reverse=True)
     write_text(INBOX_FILE, "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in inbox))
     print(f"{'total':12} new {len(inbox)} -> {INBOX_FILE.name}")

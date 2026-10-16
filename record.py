@@ -71,12 +71,14 @@ def record_scores(scores_file):
     recorded = []
     for score in scores:
         offer_id = score["id"]
+        value = score.get("score")
+        if type(value) is not int or not 1 <= value <= 10:
+            sys.exit(f"invalid score for {offer_id}: expected an integer from 1 to 10, got {value!r}")
         known = jobs.get(offer_id) or {}
         source = {**known, **(inbox.get(offer_id) or {}), **{field: score[field] for field in STORED_FIELDS if score.get(field)}}
         if not source.get("title"):
             print(f"skipped {offer_id}: not in inbox.jsonl, not in jobs.yaml and no title given", file=sys.stderr)
             continue
-        value = int(score["score"])
         entry = known or {"ref": next_ref(jobs)}
         entry.update({field: source[field] for field in STORED_FIELDS if source.get(field)})
         entry.setdefault("first_seen", today)
